@@ -1,0 +1,506 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Flight Booking</title>-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />-->
+<!--    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: 'Inter', sans-serif;-->
+<!--            background-color: #f1f3f6;-->
+<!--            margin: 0;-->
+<!--        }-->
+<!--        .card-box {-->
+<!--            background-color: #fff;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 2px 6px rgba(0,0,0,0.08);-->
+<!--            padding: 1.5rem;-->
+<!--            margin-bottom: 1.5rem;-->
+<!--        }-->
+<!--        .section-title {-->
+<!--            font-size: 1.25rem;-->
+<!--            font-weight: 600;-->
+<!--            margin-bottom: 1rem;-->
+<!--            color: #2874f0;-->
+<!--        }-->
+<!--        .error {-->
+<!--            color: red;-->
+<!--        }-->
+<!--        .success {-->
+<!--            color: green;-->
+<!--        }-->
+<!--        .btn-primary {-->
+<!--            background-color: #2874f0;-->
+<!--            border: none;-->
+<!--        }-->
+<!--        .btn-primary:hover {-->
+<!--            background-color: #1a5dc7;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div class="container mt-4">-->
+<!--    <h1 class="text-center mb-4">Flight Booking</h1>-->
+
+<!--    &lt;!&ndash; Search Section &ndash;&gt;-->
+<!--    <div id="searchSection" class="card-box">-->
+<!--        <div class="section-title">Search Flights</div>-->
+<!--        <div class="mb-3">-->
+<!--            <input-->
+<!--                    type="text"-->
+<!--                    id="origin"-->
+<!--                    class="form-control"-->
+<!--                    placeholder="Origin (e.g., New York)"-->
+<!--            />-->
+<!--        </div>-->
+<!--        <div class="mb-3">-->
+<!--            <input-->
+<!--                    type="text"-->
+<!--                    id="destination"-->
+<!--                    class="form-control"-->
+<!--                    placeholder="Destination (e.g., London)"-->
+<!--            />-->
+<!--        </div>-->
+<!--        <div class="mb-3">-->
+<!--            <input-->
+<!--                    type="date"-->
+<!--                    id="departureDate"-->
+<!--                    class="form-control"-->
+<!--                    value="2025-07-23"-->
+<!--            />-->
+<!--        </div>-->
+<!--        <button-->
+<!--                id="searchBtn"-->
+<!--                class="btn btn-primary w-100"-->
+<!--        >-->
+<!--            Search-->
+<!--        </button>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Flight List Section &ndash;&gt;-->
+<!--    <div id="flightList" class="card-box">-->
+<!--        <div class="section-title">Flights</div>-->
+<!--        <div id="flightContainer" class="row row-cols-1 g-3"></div>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Booking Section &ndash;&gt;-->
+<!--    <div id="bookingSection" class="card-box d-none">-->
+<!--        <div class="section-title">Book Flight</div>-->
+<!--        <p id="errorMsg" class="error d-none"></p>-->
+<!--        <p id="successMsg" class="success d-none"></p>-->
+<!--        <p id="bookingFlightId"></p>-->
+<!--        <p id="membershipNumber"></p>-->
+<!--        <p id="availablePoints"></p>-->
+<!--        <div class="mb-3 form-check">-->
+<!--            <input-->
+<!--                    type="checkbox"-->
+<!--                    id="usePoints"-->
+<!--                    class="form-check-input"-->
+<!--                    checked-->
+<!--            />-->
+<!--            <label for="usePoints" class="form-check-label">Use reward points for discount (1 point = $1)</label>-->
+<!--        </div>-->
+<!--        <button-->
+<!--                id="confirmBtn"-->
+<!--                class="btn btn-primary w-100 mb-2"-->
+<!--        >-->
+<!--            Confirm-->
+<!--        </button>-->
+<!--        <button-->
+<!--                id="backBtn"-->
+<!--                class="btn btn-primary w-100 mb-2 d-none"-->
+<!--        >-->
+<!--            Book Another-->
+<!--        </button>-->
+<!--        <button-->
+<!--                id="dashboardBtn"-->
+<!--                class="btn btn-secondary w-100"-->
+<!--        >-->
+<!--            Back to Dashboard-->
+<!--        </button>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<script>-->
+<!--    // Retrieve membership number and points from sessionStorage-->
+<!--    const memberDataJson = sessionStorage.getItem('memberData');-->
+<!--    if (!memberDataJson) {-->
+<!--        alert('Please login first.');-->
+<!--        window.location.href = '/index.html';-->
+<!--    }-->
+<!--    const member = JSON.parse(memberDataJson);-->
+<!--    if (!member.membershipNumber) {-->
+<!--        alert('Invalid member data. Please login again.');-->
+<!--        sessionStorage.removeItem('memberData');-->
+<!--        window.location.href = '/index.html';-->
+<!--    }-->
+<!--    const membershipNumber = member.membershipNumber;-->
+<!--    let selectedFlightId = null;-->
+<!--    let allFlights = [];-->
+
+<!--    // Display membership number and available points-->
+<!--    document.getElementById("membershipNumber").textContent = `Membership Number: ${membershipNumber}`;-->
+<!--    document.getElementById("availablePoints").textContent = `Available Points: ${member.rewardPoints.toFixed(2)}`;-->
+
+<!--    // Fetch flights from /api/flights-->
+<!--    function fetchFlights() {-->
+<!--        const departureDate = document.getElementById("departureDate").value;-->
+<!--        const url = departureDate ? `/api/flights?departureDate=${departureDate}` : "/api/flights";-->
+<!--        axios.get(url)-->
+<!--            .then(response => {-->
+<!--                allFlights = response.data;-->
+<!--                displayFlights(allFlights);-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error("Failed to fetch flights", error);-->
+<!--                document.getElementById("flightContainer").innerHTML =-->
+<!--                    '<p class="text-danger">Failed to load flights</p>';-->
+<!--            });-->
+<!--    }-->
+
+<!--    // Display flights-->
+<!--    function displayFlights(flights) {-->
+<!--        const container = document.getElementById("flightContainer");-->
+<!--        container.innerHTML = "";-->
+<!--        flights.forEach(flight => {-->
+<!--            const flightDiv = document.createElement("div");-->
+<!--            flightDiv.className = "col";-->
+<!--            flightDiv.innerHTML = `-->
+<!--                <div class="card">-->
+<!--                    <div class="card-body">-->
+<!--                        <h5 class="card-title">${flight.flightNumber}</h5>-->
+<!--                        <p class="card-text">${flight.origin} to ${flight.destination}</p>-->
+<!--                        <p class="card-text">Departure: ${new Date(flight.departureTime).toLocaleDateString()}</p>-->
+<!--                        <p class="card-text">Price: $${flight.price.toFixed(2)}</p>-->
+<!--                        <p class="card-text">Seats: ${flight.availableSeats}</p>-->
+<!--                        <button-->
+<!--                            class="btn btn-success w-100"-->
+<!--                            ${flight.availableSeats === 0 ? "disabled" : ""}-->
+<!--                            onclick="selectFlight(${flight.id})"-->
+<!--                        >-->
+<!--                            Book-->
+<!--                        </button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            `;-->
+<!--            container.appendChild(flightDiv);-->
+<!--        });-->
+<!--    }-->
+
+<!--    // Handle flight selection-->
+<!--    function selectFlight(flightId) {-->
+<!--        selectedFlightId = flightId;-->
+<!--        document.getElementById("searchSection").classList.add("d-none");-->
+<!--        document.getElementById("flightList").classList.add("d-none");-->
+<!--        document.getElementById("bookingSection").classList.remove("d-none");-->
+<!--        document.getElementById("bookingFlightId").textContent = `Flight ID: ${flightId}`;-->
+<!--        document.getElementById("errorMsg").classList.add("d-none");-->
+<!--        document.getElementById("successMsg").classList.add("d-none");-->
+<!--        document.getElementById("backBtn").classList.add("d-none");-->
+<!--        document.getElementById("confirmBtn").classList.remove("d-none");-->
+<!--    }-->
+
+<!--    // Handle booking-->
+<!--    function bookFlight() {-->
+<!--        const usePoints = document.getElementById("usePoints").checked;-->
+<!--        document.getElementById("confirmBtn").textContent = "Booking...";-->
+<!--        document.getElementById("confirmBtn").disabled = true;-->
+<!--        axios.post("/api/bookings/book-flight", {-->
+<!--            membershipNumber,-->
+<!--            flightId: selectedFlightId,-->
+<!--            usePoints-->
+<!--        })-->
+<!--        .then(response => {-->
+<!--            const data = response.data;-->
+<!--            document.getElementById("successMsg").innerHTML = `-->
+<!--                Booking ID: ${data.bookingId}<br>-->
+<!--                Flight: ${data.flightNumber}<br>-->
+<!--                Price: $${data.discountedPrice.toFixed(2)}<br>-->
+<!--                Points Used: ${data.pointsUsed.toFixed(2)}<br>-->
+<!--                Points Earned: ${data.pointsEarned.toFixed(2)}-->
+<!--            `;-->
+<!--            document.getElementById("successMsg").classList.remove("d-none");-->
+<!--            document.getElementById("confirmBtn").classList.add("d-none");-->
+<!--            document.getElementById("backBtn").classList.remove("d-none");-->
+<!--            // Update sessionStorage with new points-->
+<!--            const updatedMember = { ...member, rewardPoints: member.rewardPoints - data.pointsUsed + data.pointsEarned };-->
+<!--            sessionStorage.setItem('memberData', JSON.stringify(updatedMember));-->
+<!--            document.getElementById("availablePoints").textContent = `Available Points: ${updatedMember.rewardPoints.toFixed(2)}`;-->
+<!--            fetchFlights(); // Refresh flights-->
+<!--        })-->
+<!--        .catch(error => {-->
+<!--            document.getElementById("errorMsg").textContent =-->
+<!--                error.response?.data || "Booking failed";-->
+<!--            document.getElementById("errorMsg").classList.remove("d-none");-->
+<!--        })-->
+<!--        .finally(() => {-->
+<!--            document.getElementById("confirmBtn").textContent = "Confirm";-->
+<!--            document.getElementById("confirmBtn").disabled = false;-->
+<!--        });-->
+<!--    }-->
+
+<!--    // Handle search-->
+<!--    function searchFlights() {-->
+<!--        const origin = document.getElementById("origin").value;-->
+<!--        const destination = document.getElementById("destination").value;-->
+<!--        const departureDate = document.getElementById("departureDate").value;-->
+<!--        let filteredFlights = allFlights;-->
+<!--        if (origin || destination || departureDate) {-->
+<!--            filteredFlights = allFlights.filter(flight => {-->
+<!--                const matchesOrigin = !origin || flight.origin.toLowerCase().includes(origin.toLowerCase());-->
+<!--                const matchesDestination = !destination || flight.destination.toLowerCase().includes(destination.toLowerCase());-->
+<!--                const matchesDate = !departureDate || new Date(flight.departureTime).toISOString().split('T')[0] === departureDate;-->
+<!--                return matchesOrigin && matchesDestination && matchesDate;-->
+<!--            });-->
+<!--        }-->
+<!--        displayFlights(filteredFlights);-->
+<!--    }-->
+
+<!--    // Event listeners-->
+<!--    document.getElementById("searchBtn").addEventListener("click", searchFlights);-->
+<!--    document.getElementById("confirmBtn").addEventListener("click", bookFlight);-->
+<!--    document.getElementById("backBtn").addEventListener("click", backToSearch);-->
+<!--    document.getElementById("dashboardBtn").addEventListener("click", () => {-->
+<!--        window.location.href = '/memberportal.html';-->
+<!--    });-->
+
+<!--    // Handle back to search-->
+<!--    function backToSearch() {-->
+<!--        document.getElementById("bookingSection").classList.add("d-none");-->
+<!--        document.getElementById("searchSection").classList.remove("d-none");-->
+<!--        document.getElementById("flightList").classList.remove("d-none");-->
+<!--        selectedFlightId = null;-->
+<!--    }-->
+
+<!--    // Initial fetch-->
+<!--    fetchFlights();-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f3f6;
+            margin: 0;
+        }
+        .card-box {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2874f0;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .btn-primary {
+            background-color: #2874f0;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #1a5dc7;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Flight Booking</h1>
+
+    <!-- Search Section -->
+    <div id="searchSection" class="card-box">
+        <div class="section-title">Search Flights</div>
+        <div class="mb-3">
+            <input type="text" id="origin" class="form-control" placeholder="Origin (e.g., New York)" />
+        </div>
+        <div class="mb-3">
+            <input type="text" id="destination" class="form-control" placeholder="Destination (e.g., London)" />
+        </div>
+        <div class="mb-3">
+            <input type="date" id="departureDate" class="form-control" value="2025-07-23" />
+        </div>
+        <button id="searchBtn" class="btn btn-primary w-100">Search</button>
+    </div>
+
+    <!-- Flight List Section -->
+    <div id="flightList" class="card-box">
+        <div class="section-title">Flights</div>
+        <div id="flightContainer" class="row row-cols-1 g-3"></div>
+    </div>
+
+    <!-- Booking Section -->
+    <div id="bookingSection" class="card-box d-none">
+        <div class="section-title">Book Flight</div>
+        <p id="errorMsg" class="error d-none"></p>
+        <p id="successMsg" class="success d-none"></p>
+        <p id="bookingFlightId"></p>
+        <p id="membershipNumber"></p>
+        <p id="availablePoints"></p>
+        <div class="mb-3 form-check">
+            <input type="checkbox" id="usePoints" class="form-check-input" checked />
+            <label for="usePoints" class="form-check-label">Use reward points for discount (1 point = $1)</label>
+        </div>
+        <button id="confirmBtn" class="btn btn-primary w-100 mb-2">Confirm</button>
+        <button id="dashboardBtn" class="btn btn-secondary w-100">Back to Dashboard</button>
+    </div>
+</div>
+
+<script>
+    const memberDataJson = sessionStorage.getItem('memberData');
+    if (!memberDataJson) {
+        alert('Please login first.');
+        window.location.href = '/index.html';
+    }
+    const member = JSON.parse(memberDataJson);
+    if (!member.membershipNumber) {
+        alert('Invalid member data. Please login again.');
+        sessionStorage.removeItem('memberData');
+        window.location.href = '/index.html';
+    }
+    const membershipNumber = member.membershipNumber;
+    let selectedFlightId = null;
+    let allFlights = [];
+
+    document.getElementById("membershipNumber").textContent = `Membership Number: ${membershipNumber}`;
+    document.getElementById("availablePoints").textContent = `Available Points: ${member.rewardPoints.toFixed(2)}`;
+
+    function fetchFlights() {
+        const departureDate = document.getElementById("departureDate").value;
+        const url = departureDate ? `/api/flights?departureDate=${departureDate}` : "/api/flights";
+        axios.get(url)
+            .then(response => {
+                allFlights = response.data;
+                displayFlights(allFlights);
+            })
+            .catch(error => {
+                console.error("Failed to fetch flights", error);
+                document.getElementById("flightContainer").innerHTML =
+                    '<p class="text-danger">Failed to load flights</p>';
+            });
+    }
+
+    function displayFlights(flights) {
+        const container = document.getElementById("flightContainer");
+        container.innerHTML = "";
+        flights.forEach(flight => {
+            const flightDiv = document.createElement("div");
+            flightDiv.className = "col";
+            flightDiv.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${flight.flightNumber}</h5>
+                        <p class="card-text">${flight.origin} to ${flight.destination}</p>
+                        <p class="card-text">Departure: ${new Date(flight.departureTime).toLocaleDateString()}</p>
+                        <p class="card-text">Price: $${flight.price.toFixed(2)}</p>
+                        <p class="card-text">Seats: ${flight.availableSeats}</p>
+                        <button
+                            class="btn btn-success w-100"
+                            ${flight.availableSeats === 0 ? "disabled" : ""}
+                            onclick="selectFlight(${flight.id})"
+                        >
+                            Book
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(flightDiv);
+        });
+    }
+
+    function selectFlight(flightId) {
+        selectedFlightId = flightId;
+        document.getElementById("searchSection").classList.add("d-none");
+        document.getElementById("flightList").classList.add("d-none");
+        document.getElementById("bookingSection").classList.remove("d-none");
+        document.getElementById("bookingFlightId").textContent = `Flight ID: ${flightId}`;
+        document.getElementById("errorMsg").classList.add("d-none");
+        document.getElementById("successMsg").classList.add("d-none");
+        document.getElementById("confirmBtn").classList.remove("d-none");
+    }
+
+    function bookFlight() {
+        const usePoints = document.getElementById("usePoints").checked;
+        document.getElementById("confirmBtn").textContent = "Booking...";
+        document.getElementById("confirmBtn").disabled = true;
+        axios.post("/api/bookings/book-flight", {
+            membershipNumber,
+            flightId: selectedFlightId,
+            usePoints
+        })
+        .then(response => {
+            const data = response.data;
+            document.getElementById("successMsg").innerHTML = `
+                Booking ID: ${data.bookingId}<br>
+                Flight: ${data.flightNumber}<br>
+                Price: $${data.discountedPrice.toFixed(2)}<br>
+                Points Used: ${data.pointsUsed.toFixed(2)}<br>
+                Points Earned: ${data.pointsEarned.toFixed(2)}
+            `;
+            document.getElementById("successMsg").classList.remove("d-none");
+            document.getElementById("confirmBtn").classList.add("d-none");
+
+            const updatedMember = {
+                ...member,
+                rewardPoints: member.rewardPoints - data.pointsUsed + data.pointsEarned
+            };
+            sessionStorage.setItem('memberData', JSON.stringify(updatedMember));
+            document.getElementById("availablePoints").textContent = `Available Points: ${updatedMember.rewardPoints.toFixed(2)}`;
+            fetchFlights();
+        })
+        .catch(error => {
+            document.getElementById("errorMsg").textContent =
+                error.response?.data || "Booking failed";
+            document.getElementById("errorMsg").classList.remove("d-none");
+        })
+        .finally(() => {
+            document.getElementById("confirmBtn").textContent = "Confirm";
+            document.getElementById("confirmBtn").disabled = false;
+        });
+    }
+
+    function searchFlights() {
+        const origin = document.getElementById("origin").value;
+        const destination = document.getElementById("destination").value;
+        const departureDate = document.getElementById("departureDate").value;
+        let filteredFlights = allFlights;
+        if (origin || destination || departureDate) {
+            filteredFlights = allFlights.filter(flight => {
+                const matchesOrigin = !origin || flight.origin.toLowerCase().includes(origin.toLowerCase());
+                const matchesDestination = !destination || flight.destination.toLowerCase().includes(destination.toLowerCase());
+                const matchesDate = !departureDate || new Date(flight.departureTime).toISOString().split('T')[0] === departureDate;
+                return matchesOrigin && matchesDestination && matchesDate;
+            });
+        }
+        displayFlights(filteredFlights);
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", searchFlights);
+    document.getElementById("confirmBtn").addEventListener("click", bookFlight);
+    document.getElementById("dashboardBtn").addEventListener("click", () => {
+        window.location.href = '/memberportal.html';
+    });
+
+    fetchFlights();
+</script>
+</body>
+</html>

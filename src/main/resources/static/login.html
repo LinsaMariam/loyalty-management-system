@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Member Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <style>
+        body {
+          background: linear-gradient(to right, #0062E6, #33AEFF);
+          font-family: 'Segoe UI', sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+        }
+        .login-card {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+          padding: 40px;
+          width: 100%;
+          max-width: 400px;
+          text-align: center;
+        }
+        .login-card h2 {
+          margin-bottom: 20px;
+          color: #0062E6;
+        }
+        .create-link {
+          margin-top: 15px;
+          font-size: 0.95rem;
+        }
+        .create-link a {
+          color: #0062E6;
+          text-decoration: none;
+        }
+        .create-link a:hover {
+          text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <h2>Member Login</h2>
+    <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required class="form-control mb-3" />
+        <input type="password" id="loginPassword" placeholder="Password" required class="form-control mb-3" />
+        <button type="button" onclick="loginMember()" class="btn btn-primary w-100">Login</button>
+    </form>
+    <div class="create-link mt-3">
+        No account? <a href="enrol.html">Create one</a>
+    </div>
+</div>
+
+<script>
+    function loginMember() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      fetch('/api/members/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailAddress: email, password: password })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Invalid credentials');
+        return res.json();
+      })
+      .then(data => {
+        console.log('Login success:', data);
+        sessionStorage.setItem('memberData', JSON.stringify(data));
+        window.location.href = '/memberportal.html';
+      })
+      .catch(err => alert(err));
+    }
+</script>
+</body>
+</html>
